@@ -13,6 +13,15 @@ class Survey():
     def add_downhole_survey(self, downhole_survey):
         self.downhole_surveys.append(downhole_survey)
     
+    def export_shapefile(self, location='.', filename="Survey_Export"):
+        from pyshp import shapefile
+        w = shapefile.Writer(location + '\\' + filename)
+        w.field('hole_id', 'C')
+        for downhole_survey in self.downhole_surveys:
+            w.linez([downhole_survey.min_curv()])
+            w.record(downhole_survey.id)
+        w.close()
+    
 
 
 
@@ -98,5 +107,6 @@ class DownholeSurvey():
                 except:
                     raise Error("rest failed")
                     return 'Failed'
-        return x_coords, y_coords, z_coords
+        
+        return [list(coords) for coords in list(zip(x_coords, y_coords, z_coords))]
 
