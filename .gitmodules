@@ -1,0 +1,3 @@
+[submodule "pyshp"]
+	path = pyshp
+	url = git@github.com:GeospatialPython/pyshp.git
