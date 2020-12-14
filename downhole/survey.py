@@ -16,18 +16,16 @@ class Survey():
     def export_shapefile(self, location='.', filename="Survey_Export"):
         from pyshp import shapefile
         w = shapefile.Writer(location + '\\' + filename)
-        w.field('hole_id', 'C')
+        w.field('HOLE_ID', 'C')
         for downhole_survey in self.downhole_surveys:
             w.linez([downhole_survey.min_curv()])
             w.record(downhole_survey.id)
         w.close()
     
 
-
-
 class DownholeSurvey():
     """Only a single hole survey at the moment"""
-    def __init__(self, azm_data, dip_data, depth_data, x, y, z, id='NO-ID'):
+    def __init__(self, azm_data, dip_data, depth_data, x, y, z, id='NO-ID',**kwargs):
         self.id = id
         self.azm_data = azm_data
         self.dip_data = dip_data
@@ -35,6 +33,7 @@ class DownholeSurvey():
         self.x = x
         self.y = y
         self.z = z
+        self.attributes = list(kwargs.items())
     
     def __repr__(self):
         return f"Downhole Survey - {self.id}"
