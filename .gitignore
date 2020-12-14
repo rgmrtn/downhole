@@ -1,6 +1,10 @@
 # https://github.com/github/gitignore/blob/master/Python.gitignore
 # custom
 *.xlsx
+*.shp
+*.LOCK
+*.dbf
+*.shx
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
