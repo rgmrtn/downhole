@@ -24,7 +24,17 @@ class Survey():
     
 
 class DownholeSurvey():
-    """Only a single hole survey at the moment"""
+    """Downhole Survey
+    Container object for the downhole survey data.
+
+    Attributes:
+        dip_data -- A list of the dip angles from the survey dataset
+        azm_data -- A list of the azimuth orientations from the survey dataset
+        depth_data -- A list of the dip angles from the survey dataset
+        x -- x coordinate of the collar location
+        y -- y coordinate of the collar location
+        z -- z coordinate of the collar location
+    """
     def __init__(self, azm_data, dip_data, depth_data, x, y, z, id='NO-ID',**kwargs):
         self.id = id
         self.azm_data = azm_data
@@ -40,18 +50,19 @@ class DownholeSurvey():
         return f"Downhole Survey - {self.id}"
     
 class Min_Curv():
-    """Minimum Curvature Points
+    """Minimum Curvature Results
     Attributes:
-        dip_data -- A list of the dip angles from the survey dataset
-        azm_data -- A list of the azimuth orientations from the survey dataset
-        depth_data -- A list of the dip angles from the survey dataset
-        x -- x coordinate of the collar location
-        y -- y coordinate of the collar location
-        z -- z coordinate of the collar location
+        DownholeSurvey -- the DownholeSurvey object containing the survey info.
     
-    Result:
-        A list of three arrays containing the X,Y,Z values of the points
-        representing a minimum curvature line.
+    Methods:
+        sample_point -- produces the X,Y,Z coordinates of a point at a distance
+        along the line
+
+        survey_intervals -- produces the X,Y,Z coordinates of points
+        representing the downhole survey trace along with the original survey
+        data and interval number
+
+        xyz_points -- only the X,Y,Z coordinates of the survey_intervals
     """
     def __init__(self, DownholeSurvey):
         self.dip_data = DownholeSurvey.dip_data
@@ -68,30 +79,36 @@ class Min_Curv():
             print('Depth out of range.')
         else:
             for i in range(self.records):
-                if dist == self.survey_intervals[i]:
-                    return self.survey_intervals[i][1][:3]
+                if dist == self.survey_intervals[i][1][3]:
+                    return i,self.survey_intervals[i][1][:3]
                 elif not i == self.records - 1:
-                    if self.survey_intervals[i] < dist < self.survey_intervals[i+1]:
+                    if self.survey_intervals[i][1][3] < dist < self.survey_intervals[i+1][1][3]:
                         x1 = self.survey_intervals[i][1][0]
                         x2 = self.survey_intervals[i+1][1][0]
                         y1 = self.survey_intervals[i][1][1]
                         y2 = self.survey_intervals[i+1][1][1]
                         z1 = self.survey_intervals[i][1][2]
                         z2 = self.survey_intervals[i+1][1][2]
+                        intervaldist = sqrt(((x2 - x1)**2)+((y2 - y1)**2)+((z2 - z1)**2))
+                        dist_along = dist - self.survey_intervals[i][1][3] # distance from last interval
+                        u = dist_along / intervaldist
+                        x = round((1-u)* x1 + (u*x2),3)
+                        y = round((1-u)* y1 + (u*y2),3)
+                        z = round((1-u)* z1 + (u*z2),3)
+                        return [i,[x,y,z,dist]]
+        
+    def sample_interval(self, from_dist, to_dist):
+        start = self.sample_point(from_dist)
+        end = self.sample_point(to_dist)
+        between = [
+            [self.survey_intervals[i][0], self.survey_intervals[i][1][:4]]
+            for i in range(start[0]+1,end[0]+1)
+            ]
+        between.insert(0,start)
+        between.append(end)
+        return between
 
-                        intervaldist = sqrt(((x2 - x1)**2)+((y2 - y1)**2)+((z2 - x1)**2))
-                        u = dist / intervaldist
-                        x = (1-u)* x1 + (u*x2)
-                        y = (1-u)* y1 + (u*y2)
-                        z = (1-u)* z1 + (u*b2)
-                        return [x,y,z]
 
-
-
-
-
-
-    
     def survey_intervals(self):
         if not (len(self.dip_data) == len(self.depth_data) == len(self.azm_data)):
             raise SurveyLengthError(self.azm_data, self.dip_data, self.depth_data)
@@ -153,7 +170,7 @@ class Min_Curv():
         return survey_intervals
 
     def xyz_points(self):
-        return [i[1][:3] for i in self.survey_intervals()]
+        return [i[1][:3] for i in self.survey_intervals]
 
 
 
