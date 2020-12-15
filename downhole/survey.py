@@ -2,18 +2,118 @@ from math import acos, cos, sin, radians, degrees, tan, copysign, sqrt
 from .exceptions import *
 import logging
 
-logging.basicConfig(filename='app.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s')
-logging.warning('This will get logged to a file NEW')
+logging.basicConfig(filename='app.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s', level="INFO")
+
+class Hole_Set():
+    def __init__(self):
+        self.holes = []
+    
+    def add_hole(self, hole):
+        self.holes.append(hole)
+    
+
+
+class Hole():
+    """Hole
+
+    Attributes:
+        id -- Hole ID
+        samples -- list of samples
+    
+    Methods:
+        add_sample -- Add sample to list of samples in hole
+    """
+
+    def __init__(self, id):
+        self.id = id
+        self.samples = []
+    
+    def add_sample(self, sample):
+        self.samples.append(sample)
+    
+    def __repr__(self):
+        return self.id
+    
+    def __eq__(self,other):
+        return self.id == other
+
+    def __ne__(self,other):
+        return self.id != other
+
+
+class Sample_Set():
+    """Sample Set
+
+    Attributes:
+        samples -- list of samples in sample set
+    
+    Methods:
+        export_shapefile -- pyshp of sample set to line traces
+
+    """
+    def __init__(self):
+        self.samples = []
+    
+    def add_sample(self, sample):
+        self.samples.append(sample)
+    
+    def export_shapefile(self, location='.', filename='Sample_Set'):
+        from pyshp import shapefile
+        w = shapefile.Writer(location + '\\' + filename)
+        w.field('SAMPLE_ID', 'C')
+        w.field('HOLE_ID', 'C')
+        for sample in self.samples:
+            w.linez([sample.xyz_points()])
+            w.record(sample.id, sample.hole_id)
+        w.close()
+        logging.info('Shapefile exported.')
+
+class Sample():
+    """Sample
+
+    Attributes:
+        id -- Sample ID
+        hole_id -- Hole ID
+        sample_type -- 'INT' or 'PT' (Interval or Point)
+        sample_location -- list of XYZ points representing the sample
+
+    Methods:
+        xyz_points -- returns the list of XYZ points representing the sample
+    """
+
+    def __init__(self, id, hole_id, sample_type, sample_location):
+        self.id = id
+        self.hole_id = hole_id
+        self.sample_type = sample_type
+        self.sample_location = sample_location
+
+    def __repr__(self):
+        return self.id
+    
+    def xyz_points(self):
+        return [i[1][:3] for i in self.sample_location]
+
 
 class Survey():
-    """A set of downhole surveys"""
-    def __init__(self, downhole_surveys=[]):
-        self.downhole_surveys = downhole_surveys
+    """Survey
+    A set of downhole surveys
+    Attributes:
+        downhole_surveys -- list of downhole surveys associated with the survey
+        set
+    
+    Methods:
+        add_downhole_survey -- Add downhole survey to list of downhole surveys
+        export_shapefile -- pyshp of survey traces to shapefile
+    """
+    def __init__(self):
+        logging.info('Survey object created.')
+        self.downhole_surveys = []
     
     def __repr__(self):
         return f"Survey containing {len(self.downhole_surveys)} records."
 
     def add_downhole_survey(self, downhole_survey):
+        logging.info(f'{downhole_survey.id} downhole survey added to Survey dataset.')
         self.downhole_surveys.append(downhole_survey)
     
     def export_shapefile(self, location='.', filename="Survey_Export"):
@@ -24,6 +124,7 @@ class Survey():
             w.linez([downhole_survey.min_curv.xyz_points()])
             w.record(downhole_survey.id)
         w.close()
+        logging.info('Shapefile exported.')
     
 
 class DownholeSurvey():
@@ -37,6 +138,10 @@ class DownholeSurvey():
         x -- x coordinate of the collar location
         y -- y coordinate of the collar location
         z -- z coordinate of the collar location
+        attributes -- currently unused
+        min_curv -- XYZ points representing the minimum curvature path of the
+        downhole survey trace
+
     """
     def __init__(self, azm_data, dip_data, depth_data, x, y, z, id='NO-ID',**kwargs):
         self.id = id
@@ -50,7 +155,13 @@ class DownholeSurvey():
         self.min_curv = Min_Curv(self)
     
     def __repr__(self):
-        return f"Downhole Survey - {self.id}"
+        return f"{self.id}"
+
+    def __eq__(self,other):
+        return self.id == other
+
+    def __ne__(self,other):
+        return self.id != other
     
 class Min_Curv():
     """Minimum Curvature Results
