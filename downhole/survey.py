@@ -2,14 +2,27 @@ from math import acos, cos, sin, radians, degrees, tan, copysign, sqrt
 from .exceptions import *
 import logging
 
-logging.basicConfig(filename='app.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s', level="INFO")
+logging.basicConfig(filename='survey.log', filemode='w', format='%(name)s - %(levelname)s - %(message)s', level="WARNING")
 
 class Hole_Set():
+    """Hole Set
+    Container object for a set of holes
+
+    Attributes:
+        holes -- list of hole objects
+    
+    Methods:
+        add_hole -- add a hole to the list of holes
+    """
     def __init__(self):
+        logging.info('Hole set created.')
         self.holes = []
     
     def add_hole(self, hole):
-        self.holes.append(hole)
+        if type(hole) == Hole:
+            self.holes.append(hole)
+        else:
+            logging.warning('Cannot add object to Hole_Set, incorrect type.')
     
 
 
@@ -31,6 +44,9 @@ class Hole():
     def add_sample(self, sample):
         self.samples.append(sample)
     
+    def __hash__(self):
+        return hash(self.id)
+
     def __repr__(self):
         return self.id
     
@@ -194,7 +210,7 @@ class Min_Curv():
         else:
             for i in range(self.records):
                 if dist == self.survey_intervals[i][1][3]:
-                    return i,self.survey_intervals[i][1][:3]
+                    return [i,self.survey_intervals[i][1][:4]]
                 elif not i == self.records - 1:
                     if self.survey_intervals[i][1][3] < dist < self.survey_intervals[i+1][1][3]:
                         x1 = self.survey_intervals[i][1][0]
@@ -215,11 +231,14 @@ class Min_Curv():
         start = self.sample_point(from_dist)
         end = self.sample_point(to_dist)
         between = [
-            [self.survey_intervals[i][0], self.survey_intervals[i][1][:4]]
-            for i in range(start[0]+1,end[0]+1)
-            ]
+            [
+                self.survey_intervals[i][0],
+                self.survey_intervals[i][1][:4]
+            ] for i in range(start[0]+1,end[0]+1)
+        ]
         between.insert(0,start)
-        between.append(end)
+        if end != between[-1]: # prevents duplicate last point in interval
+            between.append(end)
         return between
 
 
